@@ -16,8 +16,9 @@ library(psych)
 library(dplyr)
 library(rstatix)
 library(scales)
-
-# Read CSV SA ------
+library(xtable)
+# 1 Import  CSV SA -----------------------------------------------------------------------------------------------
+##  1.1 Auswertung Gesamt -----------------------------------------------------------------------------------------
 df <- read_csv2('data/Auswertunggesamt.csv') %>%
   clean_names() %>%
   mutate(gruppe = as.factor(gruppe),
@@ -46,7 +47,7 @@ df$Szene <- factor(df$Szene, levels=c(1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,
 df$Gruppe <- factor(df$Gruppe, levels=c('M 2D','M 3D','HMD'))
 print(levels(df$Gruppe))
 
-# Read CSV Abschlussfragebogen ------
+## 1.2 Abschlussfragebogen ------------------------------------------------------------------------------------------
 dfA <- read_csv2('data/Abschlussfragebogen Putz.csv')  %>%
   na.omit() %>%
   mutate(Usab2 =as.numeric(gsub(",", ".", Usab2)),
@@ -60,7 +61,7 @@ hist(dfA$Pe1)
 hist(dfA$Immersion)
 str(dfA)
 hist(dfA$Immersion)
-# Data Input Complete ----
+## 1.3 Create Additional Dataframes ------------------------------------------------------------------------------------
 
 str(df)
 problems(df)
@@ -77,8 +78,8 @@ plot( p2, col=rgb(1,0,0,1/4), xlim=c(0,1), add=T)  # second
 plot( p3, col=rgb(1,0,0,1/4), xlim=c(0,1), add=T)  # second
 
 
-#########################################
-# Kruskal Wallis - all days - sa_gesamt ~ gruppe ---- 
+# 2 Statistische Auswertung ----------------------------------------------------------------------------------------
+## 2.1 Kruskal Wallis - all days - sa_gesamt ~ gruppe ---- 
 df_hmd <- df %>% filter(Gruppe=='HMD')
 # Deskriptive Statistik
 describeBy(df_hmd$Sa_gesamt,df_hmd$Termin) #
@@ -99,8 +100,19 @@ df_hmd %>%
   wilcox_effsize(Sa_gesamt~Termin) %>%
   as.data.frame()
 
+sink(file = "tables/kw.tex")
+foo <- as.matrix(k_res)
+print(xtable(foo, caption = "Kruskal Test", label = "tab:one",
+             digits = c(0, 0, 2, 0, 2, 3, 3)), table.placement = "tbp",
+      caption.placement = "top")
+sink(file = NULL)
+
+
+
+
+
 #########################################
-# Kruskal Wallis - all days - sa_gesamt ~ gruppe ---- 
+## 2.2 Kruskal Wallis - all days - sa_gesamt ~ gruppe ---- 
 
 # Deskriptive Statistik
 describeBy(df$Sa_gesamt,df$Gruppe) #
@@ -123,9 +135,9 @@ df %>%
   as.data.frame()
 
 #########################################
-#  Plotting ----
-## Defines ----
-### Boxplottheme ----
+# 3 Plotting ----
+## 3.1 Defines ----
+### 3.2 Boxplottheme ----
 boxplotTheme_light <- theme_light()+theme(axis.line = element_line(linewidth = 0.25),
   panel.grid.major = element_line(linewidth = 0.25),
   panel.grid.minor = element_line(linewidth = 0.25))+  
@@ -157,32 +169,55 @@ boxplot_patternDensity = 0.01
 
 legendAtBottom <- theme(legend.position = "bottom", legend.direction = "horizontal")
 legendNotTitle <- theme(legend.title = element_blank())
+#### 3.2.1  Trendline ----
+trendline <- geom_smooth(method=lm,se=FALSE, color="black", aes(group=1)) 
 
 patternColor='#000000'
 patternFill='#000000'
 patternAlpha=0.2
 
+### 3.3 Shapes and Sizes ----
 geomshape=4
 geomsize=3
 geomcolor='#000000'
 geomfill='#000000'
-### Percent Formatting y Axis ---- 
+plotHeight = 3.2
+plotWidthWide = 5.66
+plotWidthNarrow = 3.66
+### 3.4 Utilites ---- 
+#### 3.4.1 Percent Formatting y Axis ---- 
 percent_format <- function(x) {
   paste0(format(x * 100, nsmall = 0), "\\%")
 }
 
-###  Trendline ----
-trendline <- geom_smooth(method=lm,se=FALSE, color="black", aes(group=1)) 
-
-### Plotting ----
+#### 3.4.2 TIKZ Start Function ----
 stikz <- function(name,wi,hi){
+  name<-paste('plots/',name)
   new_name <- gsub(" ","",paste(name,'.tex'))
   tikz(new_name, width = wi,height = hi,pointsize = 12) #define plot name size and font size
   par(mar=c(2,2,2,2)) # The syntax is mar=c(bottom, left, top, right).
 }
-## Create boxplots ----
-### SA über Szenen und Aufkommen ----
-stikz("SAuSzenen",5.66,3.2)
+
+## 3.2 Plots ----
+### 3.2.1 Situationsbewusstsein ----
+#### BP_SA~TERcG ----
+stikz("BP_SA~TERcG",plotWidthNarrow,plotHeight)
+ggplot(df, aes(x = Termin, y = Sa_gesamt, fill = Gruppe))+
+  stat_boxplot(geom = 'errorbar',linewidth=0.2) +
+  geom_boxplot(size=0.2)+
+  scale_y_continuous(labels = percent_format) +
+  scale_fill_manual(name = 'Gruppe', values = boxplot_colorPalette) +
+  geom_boxplot_pattern(aes( pattern = Gruppe),pattern_color=patternColor, pattern_fill=patternFill,pattern_spacing = boxplot_patternSpacing,pattern_alpha=patternAlpha,pattern_density = boxplot_patternDensity)+
+  stat_summary(fun.y=mean, color=geomcolor, position = position_dodge(0.75), geom="point", shape=geomshape, size=geomsize, show.legend = FALSE) +
+  labs(x = "Termin", y = "SA Gesamt" ) +
+  boxplotTheme+
+  trendline+
+  legendAtBottom+theme(legend.key = element_rect(fill = NA)) 
+dev.off() # export file and exit tikzDevice function
+
+
+#### BP_SA~SZcVER ----
+stikz("BP_SA~SZcVER",plotWidthWide,plotHeight)
 ggplot(df, aes(x = Szene, y = Sa_gesamt, fill = Verkehrsaufkommen))+
     stat_boxplot(geom = 'errorbar',linewidth=0.2)+
     geom_boxplot(size=0.2)+
@@ -195,23 +230,9 @@ ggplot(df, aes(x = Szene, y = Sa_gesamt, fill = Verkehrsaufkommen))+
     legendAtBottom+theme(legend.key = element_rect(fill = NA))
 dev.off()
 
-### SA über Termine und Gruppen ----
-stikz("SAuTERuGruppe",3.66,3.2)
-ggplot(df, aes(x = Termin, y = Sa_gesamt, fill = Gruppe))+
-    stat_boxplot(geom = 'errorbar',linewidth=0.2) +
-    geom_boxplot(size=0.2)+
-    scale_y_continuous(labels = percent_format) +
-    scale_fill_manual(name = 'Gruppe', values = boxplot_colorPalette) +
-    geom_boxplot_pattern(aes( pattern = Gruppe),pattern_color=patternColor, pattern_fill=patternFill,pattern_spacing = boxplot_patternSpacing,pattern_alpha=patternAlpha,pattern_density = boxplot_patternDensity)+
-    stat_summary(fun.y=mean, color=geomcolor, position = position_dodge(0.75), geom="point", shape=geomshape, size=geomsize, show.legend = FALSE) +
-    labs(x = "Termin", y = "SA Gesamt" ) +
-    boxplotTheme+
-    trendline+
-    legendAtBottom+theme(legend.key = element_rect(fill = NA))
-dev.off() # export file and exit tikzDevice function
-
-### VT über Termine und Gruppen ----
-stikz("VTuTERuGruppe",3.66,3.2)
+### 3.2.2 Verkehrsteilnehmer ----
+#### BP_VT~TERcG ----
+stikz("BP_VT~TERcGruppe",plotWidthNarrow,plotHeight)
 ggplot(df, aes(x = Termin, y = Vt, fill = Gruppe))+
  stat_boxplot(geom = 'errorbar',linewidth=0.2) +
   geom_boxplot(size=0.2)+
@@ -224,8 +245,23 @@ ggplot(df, aes(x = Termin, y = Vt, fill = Gruppe))+
   legendAtBottom+theme(legend.key = element_rect(fill = NA))
 dev.off() # export file and exit tikzDevice function
 
-### VS über Termine und Gruppen ----
-stikz("VSuTERuGruppe",5.66,3.2)
+#### BP_VT~SZcQ ----
+stikz("BP_VT~SZcQ ",plotWidthWide,plotHeight)
+ggplot(df, aes(x = Szene, y = Vt, fill=Qualitat))+
+  stat_boxplot(geom = 'errorbar',linewidth=0.2)+
+  geom_boxplot(size=0.2)+
+  scale_y_continuous(labels = percent_format) +
+  scale_fill_manual(name = 'Qualitat', values = boxplot_colorPalette) +
+  geom_boxplot_pattern(aes( pattern = Qualitat),pattern_color=patternColor, pattern_fill=patternFill,pattern_spacing = boxplot_patternSpacing,pattern_alpha=patternAlpha,pattern_density = boxplot_patternDensity)+
+  stat_summary(fun.y=mean, color=geomcolor, position = position_dodge(0.75), geom="point", shape=geomshape, size=geomsize, show.legend = FALSE) +
+  labs(x = "Szene", y = "Verkehrsteilnehmer") +
+  boxplotTheme+
+  legendAtBottom+theme(legend.key = element_rect(fill = NA))
+dev.off()
+
+### 3.2.3 Verkehrsschilder ----
+#### BP_VS~TERcG ----
+stikz("BP_VS~TERcG",plotWidthWide,plotHeight)
 all<- ggplot(df, aes(x = Termin, y = Vs, fill = Gruppe))+
   stat_boxplot(geom = 'errorbar',linewidth=0.2) +
   geom_boxplot(size=0.2)+
@@ -250,9 +286,9 @@ hmd <-ggplot(df_hmd, aes(x = Termin, y = Vs, fill = Gruppe))+
 grid.arrange(all,hmd, ncol=2)
 dev.off() # export file and exit tikzDevice function
 
-
-### Immersion über Termine und Gruppen ----
-stikz("IMuTERuGR",5.66,3.2)
+### 3.2.4 Immersion ----
+#### BP_IM~TERcG ----
+stikz("BP_IM~TERcG",plotWidthWide,plotHeight)
 ggplot(dfA, aes(x = Termin, y = Immersion, fill=Gruppe))+
   stat_boxplot(geom = 'errorbar',linewidth=0.2)+
   geom_boxplot(size=0.2)+
@@ -264,8 +300,8 @@ ggplot(dfA, aes(x = Termin, y = Immersion, fill=Gruppe))+
   legendAtBottom+theme(legend.key = element_rect(fill = NA))
 dev.off()
 
-### Immersion über Gruppen und Qualitat ----
-stikz("IMuTERuGR",5.66,3.2)
+#### BP_IM~TERcG ----
+stikz("BP_IM~TERcG",plotWidthWide,plotHeight)
 ggplot(dfA, aes(x = Gruppe, y = Immersion, fill=Qualitat))+
   stat_boxplot(geom = 'errorbar',linewidth=0.2)+
   geom_boxplot(size=0.2)+
@@ -277,29 +313,38 @@ ggplot(dfA, aes(x = Gruppe, y = Immersion, fill=Qualitat))+
   legendAtBottom+theme(legend.key = element_rect(fill = NA))
 dev.off()
 
-stikz("VTuSZuQ",5.66,3.2)
-ggplot(df, aes(x = Szene, y = Vt, fill=Qualitat))+
-  stat_boxplot(geom = 'errorbar',linewidth=0.2)+
-  geom_boxplot(size=0.2)+
-  scale_fill_manual(name = 'Qualitat', values = boxplot_colorPalette) +
-  geom_boxplot_pattern(aes( pattern = Qualitat),pattern_color=patternColor, pattern_fill=patternFill,pattern_spacing = boxplot_patternSpacing,pattern_alpha=patternAlpha,pattern_density = boxplot_patternDensity)+
-  stat_summary(fun.y=mean, color=geomcolor, position = position_dodge(0.75), geom="point", shape=geomshape, size=geomsize, show.legend = FALSE) +
-  labs(x = "Termin", y = "Immersion") +
-  boxplotTheme+
-  legendAtBottom+theme(legend.key = element_rect(fill = NA))
-dev.off()
 
-df_H <- df %>% filter(Qualitat == H )
-mean(df%V)
 
- ## Testing ---- 
+
+
+
+# Testing Random ----
+
+df_H <- df %>% filter(Qualitat == 'H' )
+df_N <- df %>% filter(Qualitat == 'N' )
+mean(df_H$Vt)
+mean(df_N$Vt)
+describe(df_H$Vt)
+describe(df_N$Vt)
+
+wilcox.test(df_H$Vt,df_N$Vt, paired = TRUE, exact = TRUE, correct = TRUE, conf.int = TRUE)
+
+describe(df_hmd$Vt)
+wil<-wilcox.test(Vt~Qualitat, data = df_hmd, exact = FALSE, correct = FALSE, conf.int = FALSE)
+z <- qnorm(wil[["p.value"]]/2)
+r <- abs(z/sqrt(239))
+r
+
+
+
+## Testing ---- 
 #pdf("test.pdf", height=2, width=6)
 #hist(df$sa_gesamt)
 #plot(1:10, type='l', main='boring')
 #dev.off()
 
+r2spss::wilcoxon_test(df_hmd,c('Vt','Qualitat'), exact = FALSE)
 
 
-
-
+hist(dfA$Immersion)
 

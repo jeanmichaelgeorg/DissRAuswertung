@@ -1,0 +1,16 @@
+% latex table generated in R 4.2.2 by xtable 1.8-4 package
+% Wed Mar 22 21:10:38 2023
+\begin{table}[tbp]
+\centering
+\caption{ANOVA Table} 
+\label{tab:one}
+\begin{tabular}{rrrrrrr}
+  \hline
+ & Res.Df & RSS & Df & Sum of Sq & F & Pr($>$F) \\ 
+  \hline
+1 & 48 & 14358.28 &  &  &  &  \\ 
+  2 & 47 & 14148.35 & 1 & 209.93 & 0.689 & 0.411 \\ 
+  3 & 46 & 14010.21 & 1 & 138.14 & 0.454 & 0.504 \\ 
+   \hline
+\end{tabular}
+\end{table}
