@@ -1,0 +1,28 @@
+{
+    "id": "84DF919E",
+    "path": null,
+    "project_path": null,
+    "type": "object_explorer",
+    "hash": "0",
+    "contents": "",
+    "dirty": false,
+    "created": 1679484092573.0,
+    "source_on_save": false,
+    "relative_order": 4,
+    "properties": {
+        "id": "66b6408bd4c14366b1e43d9b5d1c04b6",
+        "name": "wil",
+        "title": "wil",
+        "language": "R",
+        "source_window_id": "",
+        "Source": "Source"
+    },
+    "folds": "",
+    "lastKnownWriteTime": 0,
+    "encoding": "",
+    "collab_server": "",
+    "source_window": "",
+    "last_content_update": 1679484092573,
+    "read_only": false,
+    "read_only_alternatives": []
+}
