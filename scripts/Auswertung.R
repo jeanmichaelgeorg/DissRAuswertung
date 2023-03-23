@@ -17,6 +17,7 @@ library(dplyr)
 library(rstatix)
 library(scales)
 library(xtable)
+library(patchwork)
 # 1 Import  CSV SA -----------------------------------------------------------------------------------------------
 ##  1.1 Auswertung Gesamt -----------------------------------------------------------------------------------------
 df <- read_csv2('data/Auswertunggesamt.csv') %>%
@@ -68,8 +69,8 @@ problems(df)
 skim(df)
 
 df_hmd <- df %>% filter(Gruppe=='HMD')
-df_flat <- df %>% filter(Gruppe=='M 2D')
-df_sphere <- df %>% filter(Gruppe=='M 3D')
+df_m2d <- df %>% filter(Gruppe=='M 2D')
+df_m3d <- df %>% filter(Gruppe=='M 3D')
 p1<-hist(df_flat$Sa_gesamt)
 p2<-hist(df_hmd$Sa_gesamt)
 p3<-hist(df_sphere$Sa_gesamt)
@@ -158,8 +159,11 @@ boxplotTheme_standard <- theme(axis.line = element_line(linewidth = 0.0),
 
 boxplotTheme <- boxplotTheme_standard
 
-boxplot_colorPalette <- c("#3070B3", "#F7B11E", "#9FBA36", "#075507")
-boxplot_colorPalette <- c("#D7E4F4", "#FAD080", "#C7D97D", "#075507")
+boxplot_colorPaletteDark <- c("#3070B3", "#F7B11E", "#9FBA36", "#075507")
+c1 = "#D7E4F4"
+c2 = "#FAD080"
+c3 = "#C7D97D"
+boxplot_colorPalette <- c(c1,c2,c3,)
 boxplot_boxWidth = 0.5
 boxplot_patternSpacing = 0.03
 boxplot_patternDensity = 0.01
@@ -200,21 +204,102 @@ stikz <- function(name,wi,hi){
 
 ## 3.2 Plots ----
 ### 3.2.1 Situationsbewusstsein ----
-#### BP_SA~TERcG ----
-stikz("BP_SA~TERcG",plotWidthNarrow,plotHeight)
-ggplot(df, aes(x = Termin, y = Sa_gesamt, fill = Gruppe))+
-  stat_boxplot(geom = 'errorbar',linewidth=0.2) +
+stikz("BP_SA~TERcG",plotWidthWide,plotHeight)
+BP_SA_TERcG <- function(){
+  ggplot(df, aes(x = Termin, y = Sa_gesamt, fill = Gruppe))+
+  stat_boxplot(geom = 'errorbar',linewidth=0.2)+
   geom_boxplot(size=0.2)+
   scale_y_continuous(labels = percent_format) +
   scale_fill_manual(name = 'Gruppe', values = boxplot_colorPalette) +
   geom_boxplot_pattern(aes( pattern = Gruppe),pattern_color=patternColor, pattern_fill=patternFill,pattern_spacing = boxplot_patternSpacing,pattern_alpha=patternAlpha,pattern_density = boxplot_patternDensity)+
   stat_summary(fun.y=mean, color=geomcolor, position = position_dodge(0.75), geom="point", shape=geomshape, size=geomsize, show.legend = FALSE) +
-  labs(x = "Termin", y = "SA Gesamt" ) +
+  labs(x = "Termin", y = "SA Gesamt") +
   boxplotTheme+
   trendline+
-  legendAtBottom+theme(legend.key = element_rect(fill = NA)) 
-dev.off() # export file and exit tikzDevice function
+  legendAtBottom+theme(legend.key = element_rect(fill = NA))}
+BP_SA_TERcG()
+dev.off()
 
+
+stikz("BP_SA~TER_HMD",plotWidthWide,plotHeight)
+BP_SA_TER_HMD <- function(){
+  ggplot(df_hmd, aes(x = Termin, y = Sa_gesamt, fill = Gruppe))+
+  stat_boxplot(geom = 'errorbar',linewidth=0.2)+
+  geom_boxplot(size=0.2)+
+  scale_y_continuous(labels = percent_format) +
+  scale_fill_manual(name = 'Gruppe', values = c3) +
+  geom_boxplot_pattern(pattern='circle',pattern_color=patternColor, pattern_fill=patternFill,pattern_spacing = boxplot_patternSpacing,pattern_alpha=patternAlpha,pattern_density = boxplot_patternDensity)+
+  stat_summary(fun.y=mean, color=geomcolor, position = position_dodge(0.75), geom="point", shape=geomshape, size=geomsize, show.legend = FALSE) +
+  labs(x = "Termin", y = "SA Gesamt") +
+  boxplotTheme+
+  trendline+
+  legendAtBottom+theme(legend.key = element_rect(fill = NA))}
+BP_SA_TER_HMD()
+dev.off()
+
+stikz("BP_SA~TER_M2D",plotWidthWide,plotHeight)
+BP_SA_TER_M2D <- function(){
+  ggplot(df_m2d, aes(x = Termin, y = Sa_gesamt, fill = Gruppe))+
+  stat_boxplot(geom = 'errorbar',linewidth=0.2)+
+  geom_boxplot(size=0.2)+
+  scale_y_continuous(labels = percent_format) +
+  scale_fill_manual(name = 'Gruppe', values = c1) +
+  geom_boxplot_pattern(pattern='stripe',pattern_color=patternColor, pattern_fill=patternFill,pattern_spacing = boxplot_patternSpacing,pattern_alpha=patternAlpha,pattern_density = boxplot_patternDensity)+
+  stat_summary(fun.y=mean, color=geomcolor, position = position_dodge(0.75), geom="point", shape=geomshape, size=geomsize, show.legend = FALSE) +
+  labs(x = "Termin", y = "SA Gesamt") +
+  boxplotTheme+
+  trendline+
+  legendAtBottom+theme(legend.key = element_rect(fill = NA))}
+BP_SA_TER_M2D()
+dev.off()
+
+stikz("BP_SA~TER_M3D",plotWidthWide,plotHeight)
+BP_SA_TER_M3D <- function(){
+  ggplot(df_m3d, aes(x = Termin, y = Sa_gesamt, fill = Gruppe))+
+  stat_boxplot(geom = 'errorbar',linewidth=0.2)+
+  geom_boxplot(size=0.2)+
+  scale_y_continuous(labels = percent_format) +
+  scale_fill_manual(name = 'Gruppe', values = c2) +
+  geom_boxplot_pattern(pattern='crosshatch',pattern_color=patternColor, pattern_fill=patternFill,pattern_spacing = boxplot_patternSpacing,pattern_alpha=patternAlpha,pattern_density = boxplot_patternDensity)+
+  stat_summary(fun.y=mean, color=geomcolor, position = position_dodge(0.75), geom="point", shape=geomshape, size=geomsize, show.legend = FALSE) +
+  labs(x = "Termin", y = "SA Gesamt") +
+  boxplotTheme+
+  trendline+
+  legendAtBottom+theme(legend.key = element_rect(fill = NA))
+  }
+BP_SA_TER_M3D()
+dev.off()
+
+#### 4x Patchwork----
+library(ggpubr)
+remove_y <- theme(
+  axis.text.y = element_blank(),
+  axis.ticks.y = element_blank(),
+  axis.title.y = element_blank()
+)
+remove_x <- theme(
+  axis.text.x = element_blank(),
+  axis.ticks.x = element_blank(),
+  axis.title.x = element_blank()
+)
+remove_legend <-theme(legend.position="none")
+legend_bottom <- theme(legend.position = "bottom")
+legend_collect <- plot_layout(guides = "collect")
+# Would also work, but legend has issues: wrap_plots(p, nrow = 2)+ plot_layout(guides = "collect")  & theme(legend.position = 'bottom')
+# Doesnt Share Axis: ggarrange(BP_SA_TERcG(), BP_SA_TER_M2D(), BP_SA_TER_M3D_F(), BP_SA_TER_HMD(), ncol=2, nrow=2, common.legend = TRUE, legend="bottom")
+
+# Patchwork works the best, even thouugh reemoving legends and axis is a bit annoying:
+stikz("Patchwork",plotWidthWide,5)
+(BP_SA_TERcG()+ legend_collect & legend_bottom)+remove_x +
+BP_SA_TER_M2D()+remove_y+remove_x+ remove_legend+
+BP_SA_TER_M3D_F()+ remove_legend+
+(BP_SA_TER_HMD()+remove_y+ remove_legend)+plot_layout(ncol = 2)
+
+dev.off()
+
+#### 6x Facet Grid Example----
+stikz("Test",plotWidthWide,7)
+BP_SA_TERcG + facet_grid(df$Verkehrsaufkommen ~ Qualitat )
 
 #### BP_SA~SZcVER ----
 stikz("BP_SA~SZcVER",plotWidthWide,plotHeight)
@@ -260,31 +345,41 @@ ggplot(df, aes(x = Szene, y = Vt, fill=Qualitat))+
 dev.off()
 
 ### 3.2.3 Verkehrsschilder ----
-#### BP_VS~TERcG ----
-stikz("BP_VS~TERcG",plotWidthWide,plotHeight)
-all<- ggplot(df, aes(x = Termin, y = Vs, fill = Gruppe))+
-  stat_boxplot(geom = 'errorbar',linewidth=0.2) +
-  geom_boxplot(size=0.2)+
+BP_VS_TERcG<- function(){
+  ggplot(df, aes(x = Termin, y = Vs, fill = Gruppe))+
+    stat_boxplot(geom = 'errorbar',linewidth=0.2)+
+    geom_boxplot(size=0.2)+
     scale_y_continuous(labels = percent_format) +
-  scale_fill_manual(name = 'Gruppe', values = boxplot_colorPalette) +
-  geom_boxplot_pattern(aes( pattern = Gruppe),pattern_color=patternColor, pattern_fill=patternFill,pattern_spacing = boxplot_patternSpacing,pattern_alpha=patternAlpha,pattern_density = boxplot_patternDensity)+
-  labs(x = "Termin", y = "Verkehrsschilder") +
-  boxplotTheme+
-  trendline+
-  legendAtBottom+theme(legend.key = element_rect(fill = NA))
+    scale_fill_manual(name = 'Gruppe', values = boxplot_colorPalette) +
+    geom_boxplot_pattern(aes( pattern = Gruppe),pattern_color=patternColor, pattern_fill=patternFill,pattern_spacing = boxplot_patternSpacing,pattern_alpha=patternAlpha,pattern_density = boxplot_patternDensity)+
+    stat_summary(fun.y=mean, color=geomcolor, position = position_dodge(0.75), geom="point", shape=geomshape, size=geomsize, show.legend = FALSE) +
+    labs(x = "Termin", y = "SA Gesamt") +
+    boxplotTheme+
+    trendline+
+    legendAtBottom+theme(legend.key = element_rect(fill = NA))}
 
-hmd <-ggplot(df_hmd, aes(x = Termin, y = Vs, fill = Gruppe))+
-  stat_boxplot(geom = 'errorbar',linewidth=0.2) +
-  geom_boxplot(size=0.2)+
-  scale_y_continuous(labels = percent_format) +
-  scale_fill_manual(name = 'Gruppe', values = boxplot_colorPalette) +
-  labs(x = "Termin", y = "Verkehrsschilder") +
-  stat_summary(fun=mean, geom="point", shape=3, size=7, color="black", fill="red",position = position_dodge(0.75)) +
-  boxplotTheme+
-  trendline+
-  legendAtBottom+theme(legend.key = element_rect(fill = NA))
-grid.arrange(all,hmd, ncol=2)
-dev.off() # export file and exit tikzDevice function
+stikz("BP_VS~TERcG",plotWidthWide,plotHeight)
+BP_VS_TERcG()
+dev.off()# export file and exit tikzDevice function
+
+BP_VS_TER_HMD <- function(){
+  ggplot(df_hmd, aes(x = Termin, y = Vs, fill = Gruppe))+
+    stat_boxplot(geom = 'errorbar',linewidth=0.2)+
+    geom_boxplot(size=0.2)+
+    scale_y_continuous(labels = percent_format) +
+    scale_fill_manual(name = 'Gruppe', values = c3) +
+    geom_boxplot_pattern(pattern='circle',pattern_color=patternColor, pattern_fill=patternFill,pattern_spacing = boxplot_patternSpacing,pattern_alpha=patternAlpha,pattern_density = boxplot_patternDensity)+
+    stat_summary(fun.y=mean, color=geomcolor, position = position_dodge(0.75), geom="point", shape=geomshape, size=geomsize, show.legend = FALSE) +
+    labs(x = "Termin", y = "SA Gesamt") +
+    boxplotTheme+
+    trendline+
+    legendAtBottom+theme(legend.key = element_rect(fill = NA))}
+BP_VS_TER_HMD()
+
+### 4x---
+(BP_VS_TERcG()+legend_collect&legend_bottom)+ 
+BP_VS_TER_HMD()+remove_y+remove_legend
+
 
 ### 3.2.4 Immersion ----
 #### BP_IM~TERcG ----
@@ -313,10 +408,51 @@ ggplot(dfA, aes(x = Gruppe, y = Immersion, fill=Qualitat))+
   legendAtBottom+theme(legend.key = element_rect(fill = NA))
 dev.off()
 
+### 3.2.X Rating ----
+BP_R_GcQ <- function(){
+  ggplot(df, aes(x = Gruppe , y = Rate, fill = Qualitat))+
+    stat_boxplot(geom = 'errorbar',linewidth=0.2)+
+    geom_boxplot(size=0.2)+
+    scale_fill_manual(name = 'Qualitat', values = boxplot_colorPalette) +
+    geom_boxplot_pattern(aes( pattern = Qualitat),pattern_color=patternColor, pattern_fill=patternFill,pattern_spacing = boxplot_patternSpacing,pattern_alpha=patternAlpha,pattern_density = boxplot_patternDensity)+
+    stat_summary(fun.y=mean, color=geomcolor, position = position_dodge(0.75), geom="point", shape=geomshape, size=geomsize, show.legend = FALSE) +
+    labs(x = "Gruppe", y = "Rating") +
+    boxplotTheme+
+    legendAtBottom+theme(legend.key = element_rect(fill = NA))}
+BP_R_GcQ()
+
+BP_R_SZcG <- function(){
+  ggplot(df, aes(x = Szene , y = Rate, fill = Gruppe))+
+    stat_boxplot(geom = 'errorbar',linewidth=0.2)+
+    geom_boxplot(size=0.2)+
+    scale_fill_manual(name = 'Gruppe', values = boxplot_colorPalette) +
+    geom_boxplot_pattern(aes( pattern = Gruppe),pattern_color=patternColor, pattern_fill=patternFill,pattern_spacing = boxplot_patternSpacing,pattern_alpha=patternAlpha,pattern_density = boxplot_patternDensity)+
+    stat_summary(fun.y=mean, color=geomcolor, position = position_dodge(0.75), geom="point", shape=geomshape, size=geomsize, show.legend = FALSE) +
+    labs(x = "Rating", y = "Szene") +
+    boxplotTheme+
+    legendAtBottom+theme(legend.key = element_rect(fill = NA))}
+BP_R_SZcG()
 
 
+### 3.2.X Rating ----
+BP_R_VER <- function(){
+  ggplot(df, aes(x = Verkehrsaufkommen , y = Rate, fill = Verkehrsaufkommen))+
+    stat_boxplot(geom = 'errorbar',linewidth=0.2)+
+    geom_boxplot(size=0.2)+
+    scale_fill_manual(name = 'Verkehrsaufkommen', values = boxplot_colorPalette) +
+    geom_boxplot_pattern(aes( pattern = Verkehrsaufkommen),pattern_color=patternColor, pattern_fill=patternFill,pattern_spacing = boxplot_patternSpacing,pattern_alpha=patternAlpha,pattern_density = boxplot_patternDensity)+
+    stat_summary(fun.y=mean, color=geomcolor, position = position_dodge(0.75), geom="point", shape=geomshape, size=geomsize, show.legend = FALSE) +
+    labs(x = "Verkehrsaufkommen", y = "Rating") +
+    boxplotTheme+
+    trendline+
+    legendAtBottom+theme(legend.key = element_rect(fill = NA))}
+BP_R_VER()
 
-
+describeBy(df$Rate,df$Gruppe)
+describeBy(df$Rate,df$Verkehrsaufkommen)
+hist(df_hmd$Rate)
+hist(df_m2d$Rate)
+hist(df_m3d$Rate)
 
 # Testing Random ----
 
