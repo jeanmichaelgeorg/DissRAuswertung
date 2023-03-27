@@ -115,19 +115,8 @@ qq_ggplot <- ggplot(res_qq_df, aes(x = Theoretical, y = Residuen)) +
   theme
 
 
-# data.frame mit Messwiederholungsfaktor und Residuen
-res_term_df <- data.frame(Messung = df$Termin, Residuen = res)
-
-# Streudiagramm 
-scatter_term_ggplot <- ggplot(res_term_df, aes(x = Messung, y = Residuen)) +
-  geom_boxplot(size=0.5) +
-  geom_hline(yintercept = 0, color = "blue", linetype = "dashed") +
-  labs(title = "Residuen vs. Messwiederholungsfaktor", x = "Messung", y = "Residuen") +
-  theme
 library(gridExtra)
-
-       
-grid.arrange(scatter_ggplot,hist_ggplot,qq_ggplot,scatter_term_ggplot, ncol = 2, nrow = 2)
+grid.arrange(scatter_ggplot,hist_ggplot,qq_ggplot, ncol = 2, nrow = 2)
 @
 %\input{plots/appendixtest.tex}
 

@@ -1,6 +1,16 @@
-%\includepdf[pages={1},scale=0.75,nup=1x4,pagecommand={\thispagestyle{plain},pagecommand=\subsection{LMM Verkehrsschilder}]{pdfs/LMM_VS.pdf}
-%\includepdf[pages={2-},scale=0.75,nup=1x4,pagecommand={\thispagestyle{plain}]{pdfs/LMM_VS.pdf}
-\section{Linear Mixed Effect Model Immersion}%
+\documentclass{article}
+\usepackage[scaled]{helvet} % Load the Helvetica (Arial-like) font  
+\usepackage[T1]{fontenc} % Encoding for the font
+\usepackage{geometry}
+\usepackage[nogin]{Sweave}
+\usepackage{tikz}  
+\usepackage{float}
+\geometry{paperwidth=20.1cm, paperheight=29.7cm, left=1cm, right=1cm, top=1cm, bottom=1cm}
+
+\begin{document}
+\SweaveOpts{concordance=TRUE}
+
+\section{Linear Mixed Effect Model Verkehrsteilnehmer}%
 \footnotesize{
 << teo,  echo=FALSE>>=
 options(width=100)
@@ -8,100 +18,98 @@ library(tidyverse)
 library(janitor)
 library(Hmisc)
 library(here)
+library(plyr)
 
-dfA <- read_csv2(here('data','Abschlussfragebogen Putz.csv'))  %>%
+df <- read_csv2(here::here('data','Abschlussfragebogen Putz.csv'))  %>%
   na.omit() %>%
   mutate(Usab2 =as.numeric(gsub(",", ".", Usab2)),
          TLX = as.numeric(gsub(",", ".", TLX)),
-         Probnr = as.factor(Probnr),
+         Proband = as.factor(Probnr),
          Termin = as.numeric(Termin),
          Gruppe = as.factor(Gruppe),
          Termin = as.factor(Termin),
          Qualitat = as.factor(Qualitat))
 
-contrasts(dfA$Qualitat) <- contr.sum(levels(dfA$Qualitat))
 # Set order for this factor
-lmm_lme4 <- lmerTest::lmer(
-  Immersion ~ Gruppe * Qualitat  + (1 | Probnr),
-  data = dfA
-)
 
+library(lmerTest)
+lmm_lme4 <- lmerTest::lmer(
+  Immersion ~ Gruppe * Qualitat*Termin  + (1 | Proband),
+  data = df
+)
 print("AIC")
 AIC(lmm_lme4)
 print("BIC")
 BIC(lmm_lme4)
 summary(lmm_lme4)
+
 @
 }
 \begin{figure}[H]
 \begin{center}
 <<fig=TRUE,width=4,height=4, echo=False>>=
 library(ggplot2)
-source(here('rScripts','common.R'))
- #ggplot(df, aes(x = Termin, y = Vt,fill=Gruppe))+
- #   geom_boxplot(size=0.2)
+
+appendix_textsize=7
+# Theme
+theme <- theme_light()+theme(axis.line = element_line(linewidth = 0.0),
+ panel.grid.major = element_line(linewidth = 0.25),
+ panel.grid.minor = element_line(linewidth = 0.25))+
+ theme(legend.key.width = unit(0.7, "cm"),
+ legend.key.height = unit(0.9, "cm"),
+ plot.title = element_text(size = appendix_textsize),
+ axis.title.x = element_text(size = appendix_textsize),
+ axis.title.y = element_text(size = appendix_textsize),
+ axis.text.x= element_text( colour="#000000",size=appendix_textsize),
+ axis.text.y= element_text( colour="#000000",size=appendix_textsize),
+ legend.margin = margin(-0.3,0,0,-0.2,"cm"), legend.key = element_rect(fill = NA))
  
-# Residuen anzeigen 
+# Residuen  
 res =  residuals(lmm_lme4)
 fitted_werte <- fitted(lmm_lme4)
-#plot(fitted_werte, res, xlab = "Vorhergesagte Werte", ylab = "Residuen", main = "Residuen vs. Vorhergesagte Werte")
-#abline(h = 0, col = "blue", lty = 2)
 
 res_fitted_df <- data.frame(Residuen = res, Vorhergesagte_Werte = fitted_werte)
-# Erstellen Sie das Streudiagramm mit ggplot2
+#  Streudiagramm 
 scatter_ggplot <- ggplot(res_fitted_df, aes(x = Vorhergesagte_Werte, y = Residuen)) +
-  geom_point(shape=1) +
-  geom_hline(yintercept = 0, color = "grey", linetype = "dashed") +
-  labs(title = "Residuen vs. Vorhergesagte Werte", x = "Vorhergesagte Werte", y = "Residuen")+appendix_theme
-
-# Zeichnen Sie das Streudiagramm
+  geom_hline(yintercept = 0, color = "blue", linetype = "dashed") +
+  geom_point(shape=1, stroke=0.25) +
+  labs(title = "Residuen vs. Vorhergesagte Werte", x = "Vorhergesagte Werte", y = "Residuen")+theme
 
 res_df <- data.frame(Residuen = res)
 
-# Erstellen Sie das Histogramm mit ggplot2
+#Histogramm mit ggplot2
 hist_ggplot <- ggplot(res_df, aes(x = Residuen)) +
-  geom_histogram(fill = "grey", color = "black", bins = 30) +
-  labs(title = "Histogramm der Residuen", x = "Residuen", y = "Haufigkeit")+appendix_theme
+  geom_histogram(fill = "grey", color = "black", bins = 30,size=0.2) +
+  labs(title = "Histogramm der Residuen", x = "Residuen", y = "Haufigkeit")+theme
 
 theoretical_quantiles <- qqnorm(res, plot.it = FALSE)$x
 res <- residuals(lmm_lme4)
 
-# Erstellen Sie einen data.frame mit theoretischen Quantilen und Residuen
+# data.frame mit theoretischen Quantilen und Residuen
 res_qq_df <- data.frame(Theoretical = theoretical_quantiles, Residuen = res)
 
-# Erstellen Sie das Normal-QQ-Plot mit ggplot2
+# Normal-QQ-Plot 
 qq_ggplot <- ggplot(res_qq_df, aes(x = Theoretical, y = Residuen)) +
-  geom_point() +
+  geom_point(shape=1,stroke=0.25)+ 
   xlim(-3, 3)+
   ylim(-3, 3)+
   geom_abline(color = "blue", linetype = "dashed") +
   labs(title = "Normal-QQ-Plot der Residuen", x = "Theoretische Quantile", y = "Residuen") +
-  appendix_theme
+  theme
 
 
-# Erstellen Sie einen data.frame mit Messwiederholungsfaktor und Residuen
-res_term_df <- data.frame(Messung = dfA$Termin, Residuen = res)
-
-# Erstellen Sie das Streudiagramm mit ggplot2
-scatter_term_ggplot <- ggplot(res_term_df, aes(x = Messung, y = Residuen)) +
-  geom_boxplot() +
-  geom_hline(yintercept = 0, color = "blue", linetype = "dashed") +
-  labs(title = "Residuen vs. Messwiederholungsfaktor", x = "Messung", y = "Residuen") +
-  appendix_theme
 library(gridExtra)
-
-       
-#stikz('appendixtest',5.66,5.66)
-grid.arrange(scatter_ggplot,hist_ggplot,qq_ggplot,scatter_term_ggplot, ncol = 2, nrow = 2)
-#dev.off()
+grid.arrange(scatter_ggplot,hist_ggplot,qq_ggplot, ncol = 2, nrow = 2)
 @
 %\input{plots/appendixtest.tex}
 
 \end{center}
-\caption{Residuen LMM Immersion}
+\caption{Residuen LMM Verkehrsteilnehmer}
 \label{fig:one}
 \end{figure}
 
+
+\end{document}
 
 
 
