@@ -1,9 +1,10 @@
 # Auswertung
 
-Sweave Dateien befinden sich im scripts Ornder
+Sweave Dateien befinden sich im scripts Ornder.
+
 First run: 
 ```
-renv::activate()
+renv::restore()
 ```
 
 ## Design 
