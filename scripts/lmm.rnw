@@ -1,0 +1,146 @@
+\documentclass{article}
+\usepackage[scaled]{helvet} % Load the Helvetica (Arial-like) font  
+\usepackage[T1]{fontenc} % Encoding for the font
+\usepackage{geometry}
+\usepackage[nogin]{Sweave}
+\usepackage{tikz}  
+\usepackage{float}
+\geometry{paperwidth=20.1cm, paperheight=29.7cm, left=1cm, right=1cm, top=1cm, bottom=1cm}
+
+\begin{document}
+\SweaveOpts{concordance=TRUE}
+
+\section{Linear Mixed Effect Model Verkehrsteilnehmer}%
+\footnotesize{
+<< teo,  echo=FALSE>>=
+options(width=100)
+library(tidyverse)
+library(janitor)
+library(Hmisc)
+library(here)
+library(plyr)
+
+df <- read_csv2(here::here('data','Auswertunggesamt.csv'))%>%
+  clean_names() %>%
+  mutate(gruppe = as.factor(gruppe),
+         tag = as.factor(tag),
+         sa_gesamt = as.numeric(sa_gesamt),
+         qualitat = as.factor(qualitat),
+         gruppe2 = plyr::revalue(gruppe, c("M Flat" = "M2D", 'M Sphere' = 'M3D')),
+         szene = str_remove(szene, "SA"),
+         szene= as.factor(szene),
+         verkehrsaufkommen = as.factor(verkehrsaufkommen),
+         verkehrsaufkommen2 = plyr::revalue(verkehrsaufkommen, c("1" = "L", "2"='M', "3"="H")),
+         proband = as.factor(proband),
+         altergruppe = as.factor(altersgruppe),
+         vs=as.factor(vs),
+         km_y = as.factor(km_y)) %>% 
+         na.omit() %>%
+  select(-gruppe) %>% 
+  select(-verkehrsaufkommen) %>% 
+  dplyr::rename(gruppe = gruppe2) %>%
+  dplyr::rename(verkehr = verkehrsaufkommen2) %>%
+  dplyr::rename(termin = tag) %>%
+  set_names(capitalize(names(.)))
+
+
+# Set order for this factor
+df$Szene <- factor(df$Szene, levels=c(1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29))
+df$Gruppe <- factor(df$Gruppe, levels=c('M2D','M3D','HMD'))
+
+library(lmerTest)
+lmm_lme4 <- lmerTest::lmer(
+  Vt ~Gruppe*Qualitat+(1 |Proband) + (1 | Szene),
+  data = df
+)
+
+print("AIC")
+AIC(lmm_lme4)
+print("BIC")
+BIC(lmm_lme4)
+summary(lmm_lme4)
+
+@
+}
+\begin{figure}[H]
+\begin{center}
+<<fig=TRUE,width=4,height=4, echo=False>>=
+library(ggplot2)
+
+appendix_textsize=7
+# Theme
+theme <- theme_light()+theme(axis.line = element_line(linewidth = 0.0),
+ panel.grid.major = element_line(linewidth = 0.25),
+ panel.grid.minor = element_line(linewidth = 0.25))+
+ theme(legend.key.width = unit(0.7, "cm"),
+ legend.key.height = unit(0.9, "cm"),
+ plot.title = element_text(size = appendix_textsize),
+ axis.title.x = element_text(size = appendix_textsize),
+ axis.title.y = element_text(size = appendix_textsize),
+ axis.text.x= element_text( colour="#000000",size=appendix_textsize),
+ axis.text.y= element_text( colour="#000000",size=appendix_textsize),
+ legend.margin = margin(-0.3,0,0,-0.2,"cm"), legend.key = element_rect(fill = NA))
+ 
+# Residuen  
+res =  residuals(lmm_lme4)
+fitted_werte <- fitted(lmm_lme4)
+
+res_fitted_df <- data.frame(Residuen = res, Vorhergesagte_Werte = fitted_werte)
+#  Streudiagramm 
+scatter_ggplot <- ggplot(res_fitted_df, aes(x = Vorhergesagte_Werte, y = Residuen)) +
+  geom_hline(yintercept = 0, color = "blue", linetype = "dashed") +
+  geom_point(shape=1, stroke=0.25) +
+  labs(title = "Residuen vs. Vorhergesagte Werte", x = "Vorhergesagte Werte", y = "Residuen")+theme
+
+res_df <- data.frame(Residuen = res)
+
+#Histogramm mit ggplot2
+hist_ggplot <- ggplot(res_df, aes(x = Residuen)) +
+  geom_histogram(fill = "grey", color = "black", bins = 30,size=0.2) +
+  labs(title = "Histogramm der Residuen", x = "Residuen", y = "Haufigkeit")+theme
+
+theoretical_quantiles <- qqnorm(res, plot.it = FALSE)$x
+res <- residuals(lmm_lme4)
+
+# data.frame mit theoretischen Quantilen und Residuen
+res_qq_df <- data.frame(Theoretical = theoretical_quantiles, Residuen = res)
+
+# Normal-QQ-Plot 
+qq_ggplot <- ggplot(res_qq_df, aes(x = Theoretical, y = Residuen)) +
+  geom_point(shape=1,stroke=0.25)+ 
+  xlim(-3, 3)+
+  ylim(-3, 3)+
+  geom_abline(color = "blue", linetype = "dashed") +
+  labs(title = "Normal-QQ-Plot der Residuen", x = "Theoretische Quantile", y = "Residuen") +
+  theme
+
+
+# data.frame mit Messwiederholungsfaktor und Residuen
+res_term_df <- data.frame(Messung = df$Termin, Residuen = res)
+
+# Streudiagramm 
+scatter_term_ggplot <- ggplot(res_term_df, aes(x = Messung, y = Residuen)) +
+  geom_boxplot(size=0.5) +
+  geom_hline(yintercept = 0, color = "blue", linetype = "dashed") +
+  labs(title = "Residuen vs. Messwiederholungsfaktor", x = "Messung", y = "Residuen") +
+  theme
+library(gridExtra)
+
+       
+grid.arrange(scatter_ggplot,hist_ggplot,qq_ggplot,scatter_term_ggplot, ncol = 2, nrow = 2)
+@
+%\input{plots/appendixtest.tex}
+
+\end{center}
+\caption{Residuen LMM Verkehrsteilnehmer}
+\label{fig:one}
+\end{figure}
+
+
+\end{document}
+
+
+
+
+
+
